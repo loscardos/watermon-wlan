@@ -28,4 +28,6 @@
     <string name="clicked_on_wifi">Clicked on wifi %1$s</string>
     <string name="send_command">Send Command</string>
     <string name="sending_forgot_command">Sending forgot command.</string>
+    <string name="ssid">SSID</string>
+    <string name="password">********</string>
 </resources>

@@ -29,6 +29,7 @@ import com.sesp3.watermonwlan.ble.isWritable
 import com.sesp3.watermonwlan.ble.isWritableWithoutResponse
 import com.sesp3.watermonwlan.ble.toHexString
 import com.sesp3.watermonwlan.databinding.ActivityBleOperationsBinding
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -38,7 +39,7 @@ import java.util.UUID
 class BleOperationsActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityBleOperationsBinding
-    
+
     private val device: BluetoothDevice by lazy {
         intent.parcelableExtraCompat(BluetoothDevice.EXTRA_DEVICE)
             ?: error("Missing BluetoothDevice from MainActivity!")
@@ -138,12 +139,11 @@ class BleOperationsActivity : AppCompatActivity() {
                         0 -> {
                             showCredentialPayloadDialog()
                         }
+
                         1 -> {
-                            Toast.makeText(
-                                this,
-                                R.string.sending_forgot_command,
-                                Toast.LENGTH_LONG
-                            ).show()
+                            this.writeCharacteristic(JSONObject().apply {
+                                put("description", "forgot")
+                            }.toString().replace("\"", "\\\""))
                         }
                     }
                 }
@@ -171,14 +171,10 @@ class BleOperationsActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setView(wlanCredential)
             .setPositiveButton("Write") { _, _ ->
-                val ssid = wlanSsid.text.toString()
-                val password = wlanPassword.text.toString()
-
-                if (ssid.isNotBlank() && password.isNotBlank()) {
-                    log("SSID: $ssid, Password: $password")
-                } else {
-                    log("SSID and Password cannot be empty.")
-                }
+                this.writeCharacteristic(JSONObject().apply {
+                    put("ssid", wlanSsid.text.toString())
+                    put("passwd", wlanPassword.text.toString())
+                }.toString().replace("\"", "\\\""))
             }
             .setNegativeButton("Cancel", null)
             .create()
@@ -253,14 +249,24 @@ class BleOperationsActivity : AppCompatActivity() {
     }
 
     private fun Context.hideKeyboard(view: View) {
-        val inputMethodManager = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        val inputMethodManager =
+            getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
         inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
     }
 
     private fun EditText.showKeyboard() {
-        val inputMethodManager = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+        val inputMethodManager =
+            getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
         requestFocus()
         inputMethodManager.showSoftInput(this, InputMethodManager.SHOW_IMPLICIT)
+    }
+
+    private fun writeCharacteristic(gson: String){
+        val characteristic = characteristics.first { characteristic -> characteristic.isWritable() }
+        val gsonHex = gson.toByteArray().joinToString("") { "%02x".format(it) }
+
+        log("Writing to ${characteristic.uuid}: ${gsonHex.hexToBytes()}")
+        ConnectionManager.writeCharacteristic(device, characteristic, gsonHex.hexToBytes())
     }
 
     private fun String.hexToBytes() =
