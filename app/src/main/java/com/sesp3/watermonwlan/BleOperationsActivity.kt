@@ -4,17 +4,13 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.AlertDialog
 import android.bluetooth.BluetoothDevice
-import android.bluetooth.BluetoothGattCharacteristic
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.net.wifi.WifiManager
 import android.os.Bundle
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -133,6 +129,7 @@ class BleOperationsActivity : AppCompatActivity() {
                     arrayOf(
                         "Connect to WiFi",
                         "Forgot WiFi",
+                        "Set Server",
                     )
                 ) { _, i ->
                     when (i) {
@@ -144,6 +141,10 @@ class BleOperationsActivity : AppCompatActivity() {
                             this.writeCharacteristic(JSONObject().apply {
                                 put("description", "forgot")
                             }.toString().replace("\"", "\\\""))
+                        }
+
+                        2 -> {
+                            showEndpointDialog()
                         }
                     }
                 }
@@ -183,6 +184,31 @@ class BleOperationsActivity : AppCompatActivity() {
                     WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
                 )
                 wlanSsid.showKeyboard()
+                show()
+            }
+    }
+
+    private fun showEndpointDialog() {
+        val wlanUriLayout = layoutInflater.inflate(R.layout.wlan_base_url_payload, null)
+
+        val wlanBaseUrl = wlanUriLayout.findViewById<EditText>(R.id.text_base_uri)
+        val wlanBaseUrlMeta = wlanUriLayout.findViewById<EditText>(R.id.text_base_uri_meta)
+
+        AlertDialog.Builder(this)
+            .setView(wlanUriLayout)
+            .setPositiveButton("Write") { _, _ ->
+                this.writeCharacteristic(JSONObject().apply {
+                    put("serverUrl", wlanBaseUrl.text.toString())
+                    put("serverUrlMetadata", wlanBaseUrlMeta.text.toString())
+                }.toString().replace("\"", "\\\""))
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+            .apply {
+                window?.setSoftInputMode(
+                    WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+                )
+                wlanBaseUrl.showKeyboard()
                 show()
             }
     }

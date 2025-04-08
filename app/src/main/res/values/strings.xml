@@ -30,4 +30,6 @@
     <string name="sending_forgot_command">Sending forgot command.</string>
     <string name="ssid">SSID</string>
     <string name="password">********</string>
+    <string name="base_url">Base URL</string>
+    <string name="base_url_meta">Base URL Meta</string>
 </resources>
